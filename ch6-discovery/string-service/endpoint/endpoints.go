@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-// StringEndpoint define endpoint
+// StringEndpoints define endpoint
+//在这里定义下这个，说明清楚本目录下都有哪些endpoint
 type StringEndpoints struct {
 	StringEndpoint      endpoint.Endpoint
 	HealthCheckEndpoint endpoint.Endpoint
 }
-
 
 var (
 	ErrInvalidRequestType = errors.New("RequestType has only two type: Concat, Diff")
@@ -21,6 +21,7 @@ var (
 
 // StringRequest define request struct
 type StringRequest struct {
+	//注意声明的时候可以加上tag，用来自定义json的解码
 	RequestType string `json:"request_type"`
 	A           string `json:"a"`
 	B           string `json:"b"`
@@ -33,7 +34,12 @@ type StringResponse struct {
 }
 
 // MakeStringEndpoint make endpoint
+//构造StringEndpoint的构造函数，一个StringEndpoint可以理解成mvc框架中的一个"service"
+//接收上层传过来的输入，给出对应的输出。
 func MakeStringEndpoint(svc service.Service) endpoint.Endpoint {
+	//这里可以理解成service.Service是直接提供计算服务的服务，
+	//而endpoint.Endpoint则是为微服务架构中的某个具体微服务本身的抽象。
+	//通过endpoint.Endpoint，可以通过微服务框架（例如当前使用的go-kit）对微服务进行注册
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(StringRequest)
 

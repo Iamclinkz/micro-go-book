@@ -19,6 +19,8 @@ var (
 
 // MakeHttpHandler make http handler use mux
 func MakeHttpHandler(ctx context.Context, endpoints endpoint.StringEndpoints, logger log.Logger) http.Handler {
+	//这里可以学一下kit的http包的使用
+	//使用mux.NewRouter可以创建一个http handler接口的实例
 	r := mux.NewRouter()
 
 	options := []kithttp.ServerOption{
@@ -26,6 +28,9 @@ func MakeHttpHandler(ctx context.Context, endpoints endpoint.StringEndpoints, lo
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
+	//给http handler的对应url添加post方法，符合此url的请求，会被转发给对应的kithttp.NewServer
+	//其中kithttp.NewServer内部封装了一个endpoint.Endpoint,endpoint.Endpoint内部相当于封装了一个我们自定义的service
+	//（这里虽然没有直接保存自定义service，但是调用了我们提供的service的方法）
 	r.Methods("POST").Path("/op/{type}/{a}/{b}").Handler(kithttp.NewServer(
 		endpoints.StringEndpoint,
 		decodeStringRequest,

@@ -4,6 +4,8 @@ import (
 	"log"
 )
 
+//DiscoveryClient 借助第三方组件/自己实现，实现服务发现，注册，注销。
+//这里用"Client"，说明只是一个服务发现的客户端，用于和服务注册服务器通信。从而解耦了服务发现客户端和服务器。
 type DiscoveryClient interface {
 
 	/**
@@ -29,4 +31,3 @@ type DiscoveryClient interface {
 	 */
 	DiscoverServices(serviceName string, logger *log.Logger) []interface{}
 }
-

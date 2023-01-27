@@ -16,12 +16,17 @@ var (
 	ErrorBadRequest = errors.New("invalid request parameter")
 )
 
+//位于transport层，用http协议暴露具有say-hello，discovery，health三个功能的
+//服务发现微服务。用以向消费者提供服务发现的能力。
+
 // MakeHttpHandler make http handler use mux
 func MakeHttpHandler(ctx context.Context, endpoints endpts.DiscoveryEndpoints, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 
+	//通过gorilla/mux，做路由转发，编解码并交给响应的endpoint
 	options := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		//指定解码错误（例如下面的decodeSayHelloRequest返回不为nil的时候）应该做出的反应
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
@@ -39,7 +44,6 @@ func MakeHttpHandler(ctx context.Context, endpoints endpts.DiscoveryEndpoints, l
 		options...,
 	))
 
-
 	// create health check handler
 	r.Methods("GET").Path("/health").Handler(kithttp.NewServer(
 		endpoints.HealthCheckEndpoint,
@@ -56,18 +60,16 @@ func decodeSayHelloRequest(_ context.Context, r *http.Request) (interface{}, err
 	return endpts.SayHelloRequest{}, nil
 }
 
-
 // decodeDiscoveryRequest decode request params to struct
 func decodeDiscoveryRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	serviceName := r.URL.Query().Get("serviceName")
-	if serviceName == ""{
+	if serviceName == "" {
 		return nil, ErrorBadRequest
 	}
 	return endpts.DiscoveryRequest{
-		ServiceName:serviceName,
+		ServiceName: serviceName,
 	}, nil
 }
-
 
 // decodeHealthCheckRequest decode request
 func decodeHealthCheckRequest(ctx context.Context, r *http.Request) (interface{}, error) {
@@ -80,7 +82,6 @@ func encodeJsonResponse(ctx context.Context, w http.ResponseWriter, response int
 	return json.NewEncoder(w).Encode(response)
 }
 
-
 // encode errors from business-logic
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -92,4 +93,3 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 		"error": err.Error(),
 	})
 }
-

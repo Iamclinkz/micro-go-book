@@ -29,4 +29,3 @@ type DiscoveryClient interface {
 	 */
 	DiscoverServices(serviceName string, logger *log.Logger) []interface{}
 }
-

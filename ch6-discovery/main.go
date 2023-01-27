@@ -38,16 +38,18 @@ func main() {
 	// 声明服务发现客户端
 	var discoveryClient discover.DiscoveryClient
 
+	//创建服务发现客户端，连接consul
 	discoveryClient, err := discover.NewKitDiscoverClient(*consulHost, *consulPort)
 	// 获取服务发现客户端失败，直接关闭服务
-	if err != nil{
+	if err != nil {
 		config.Logger.Println("Get Consul Client failed")
 		os.Exit(-1)
 	}
 
-	// 声明并初始化 Service
+	// 通过服务发现客户端，声明并初始化 Service
 	var svc = service.NewDiscoveryServiceImpl(discoveryClient)
 
+	//通过service，创建endpoint
 	// 创建打招呼的Endpoint
 	sayHelloEndpoint := endpoint.MakeSayHelloEndpoint(svc)
 	// 创建服务发现的Endpoint
@@ -56,11 +58,12 @@ func main() {
 	healthEndpoint := endpoint.MakeHealthCheckEndpoint(svc)
 
 	endpts := endpoint.DiscoveryEndpoints{
-		SayHelloEndpoint:		sayHelloEndpoint,
-		DiscoveryEndpoint:		discoveryEndpoint,
-		HealthCheckEndpoint:	healthEndpoint,
+		SayHelloEndpoint:    sayHelloEndpoint,
+		DiscoveryEndpoint:   discoveryEndpoint,
+		HealthCheckEndpoint: healthEndpoint,
 	}
 
+	//通过endpoint，创建router（http handler）
 	//创建http.Handler
 	r := transport.MakeHttpHandler(ctx, endpts, config.KitLogger)
 	// 定义服务实例ID
@@ -69,13 +72,13 @@ func main() {
 	go func() {
 		config.Logger.Println("Http Server start at port:" + strconv.Itoa(*servicePort))
 		//启动前执行注册
-		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost,  *servicePort, nil, config.Logger){
+		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost, *servicePort, nil, config.Logger) {
 			config.Logger.Printf("string-service for service %s failed.", serviceName)
 			// 注册失败，服务启动失败
 			os.Exit(-1)
 		}
 		handler := r
-		errChan <- http.ListenAndServe(":"  + strconv.Itoa(*servicePort), handler)
+		errChan <- http.ListenAndServe(":"+strconv.Itoa(*servicePort), handler)
 	}()
 
 	go func() {
