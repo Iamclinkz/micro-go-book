@@ -15,7 +15,7 @@ type KitDiscoverClient struct {
 	client consul.Client
 	// 连接 consul 的配置
 	config *api.Config
-	mutex sync.Mutex
+	mutex  sync.Mutex
 	// 服务实例缓存字段
 	instancesMap sync.Map
 }
@@ -32,7 +32,7 @@ func NewKitDiscoverClient(consulHost string, consulPort int) (DiscoveryClient, e
 	return &KitDiscoverClient{
 		Host:   consulHost,
 		Port:   consulPort,
-		config:consulConfig,
+		config: consulConfig,
 		client: client,
 	}, err
 }
@@ -103,8 +103,12 @@ func (consulClient *KitDiscoverClient) DiscoverServices(serviceName string, logg
 			params := make(map[string]interface{})
 			params["type"] = "service"
 			params["service"] = serviceName
+			//plan指定一个watch的查询信息，当consul存储的数据发生改变时，
+			//会调用plan.Handler，执行用户的操作。
 			plan, _ := watch.Parse(params)
 			plan.Handler = func(u uint64, i interface{}) {
+				//这里的i大概就是consul返回的变化后的全部的微服务状态数据。
+				//需要我们手动筛选一遍。从中选出正常的服务，加入我们的缓存
 				if i == nil {
 					return
 				}

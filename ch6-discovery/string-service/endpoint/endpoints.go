@@ -34,8 +34,10 @@ type StringResponse struct {
 }
 
 // MakeStringEndpoint make endpoint
-//构造StringEndpoint的构造函数，一个StringEndpoint可以理解成mvc框架中的一个"service"
-//接收上层传过来的输入，给出对应的输出。
+//构造StringEndpoint的构造函数，一个StringEndpoint可以理解成mvc框架中的一个"controller"，
+//处理某个url上的请求，接收确定类型的request，调用对应的service，给出对应类型的response。
+//增加这一层，是为了衔接外部url路径（而通常一个url表示一个对外的服务），和内部逻辑服务。即让内外服务解耦。
+//所以这里需要传入一个 string-service.Service ，因为其本身不具有处理的能力。
 func MakeStringEndpoint(svc service.Service) endpoint.Endpoint {
 	//这里可以理解成service.Service是直接提供计算服务的服务，
 	//而endpoint.Endpoint则是为微服务架构中的某个具体微服务本身的抽象。

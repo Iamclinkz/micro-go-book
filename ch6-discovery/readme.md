@@ -41,6 +41,7 @@ Exia➜  ch6-discovery : master ✘ :✹✚✭ ᐅ  tree .
 ##### 1.1 接口定义：
 
 ```go
+//这样定义有个好处，就是直接使用包名 + Service，例如 discovery.Service 即可使用discovery的Service
 type Service interface {
 
 	// HealthCheck check service health status
