@@ -155,6 +155,8 @@ func MakeHttpHandler(ctx context.Context, endpoints endpts.DiscoveryEndpoints, l
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
+  //这里注意，kit中的Server同Endpoint是1:1的关系
+  //Server = Endpoint（aka controller） + decode函数 + encode函数
 	r.Methods("GET").Path("/say-hello").Handler(kithttp.NewServer(
 		endpoints.SayHelloEndpoint,
 		decodeSayHelloRequest,

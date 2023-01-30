@@ -20,6 +20,8 @@ var (
 	ErrStrValue = errors.New("maximum size of 1024 bytes exceeded")
 )
 
+//StringService 自定义结构，为了实现StringServiceServer接口
+//本身可以看作提供四个子服务的一个服务
 type StringService struct{}
 
 func (s *StringService) LotsOfServerStream(req *stream_pb.StringRequest, qs stream_pb.StringService_LotsOfServerStreamServer) error {
@@ -35,10 +37,12 @@ func (s *StringService) LotsOfClientStream(qs stream_pb.StringService_LotsOfClie
 	for {
 		in, err := qs.Recv()
 		if err == io.EOF {
+			//如果stream连接有问题，如果是EOF，那么正常结束
 			qs.SendAndClose(&stream_pb.StringResponse{Ret: strings.Join(params, "")})
 			return nil
 		}
 		if err != nil {
+			//如果非正常结束
 			log.Printf("failed to recv: %v", err)
 			return err
 		}

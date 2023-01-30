@@ -11,7 +11,9 @@ var (
 	ErrorBadRequest = errors.New("invalid request parameter")
 )
 
+//grpcServer 实现了pb中的接口，可以通过pb.RegisterStringServiceServer接口，注册到grpc.Server中
 type grpcServer struct {
+	//内部持有两个grpc.Handler，借用Handler实现接口
 	concat grpc.Handler
 	diff   grpc.Handler
 }
@@ -34,6 +36,7 @@ func (s *grpcServer) Diff(ctx context.Context, r *pb.StringRequest) (*pb.StringR
 
 func NewStringServer(ctx context.Context, endpoints StringEndpoints) pb.StringServiceServer {
 	return &grpcServer{
+		//这里返回的是grpc.Server类型，它实现了grpc.Handler接口
 		concat: grpc.NewServer(
 			endpoints.StringEndpoint,
 			DecodeConcatStringRequest,

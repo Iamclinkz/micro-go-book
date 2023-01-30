@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package stream_pb;
 
+//StringService服务需要实现以下四个接口
+//通过定义Service，结合protoc生成go语言文件。将本结构转换为go中的接口。用户需要自己实现该接口。
 service StringService{
     rpc Concat(StringRequest) returns (StringResponse) {}
     rpc LotsOfServerStream(StringRequest) returns (stream StringResponse) {}

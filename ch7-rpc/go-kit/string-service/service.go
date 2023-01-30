@@ -19,7 +19,7 @@ var (
 	ErrStrValue = errors.New("maximum size of 1024 bytes exceeded")
 )
 
-// Service Define a service interface
+// Service 不用考虑传输，以及各种中间件，单纯的定义了业务接口。
 type Service interface {
 	// Concat a and b
 	Concat(ctx context.Context, a, b string) (string, error)
