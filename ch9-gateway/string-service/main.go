@@ -14,7 +14,7 @@ import (
 func main() {
 
 	var (
-		consulHost  = flag.String("consul.host", "114.67.98.210", "consul ip address")
+		consulHost  = flag.String("consul.host", "localhost", "consul ip address")
 		consulPort  = flag.String("consul.port", "8500", "consul port")
 		serviceHost = flag.String("service.host", "localhost", "service ip address")
 		servicePort = flag.String("service.port", "8080", "service port")
