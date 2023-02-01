@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+//StartListener 启动一个Consumer，监听rabbit mq的固定queue的消息
 func StartListener(appName string, amqpServer string, exchangeName string) {
 	err := NewConsumer(amqpServer, exchangeName, "topic", "springCloudBus", exchangeName, appName)
 	if err != nil {
@@ -23,6 +24,8 @@ type Consumer struct {
 	done    chan error
 }
 
+//NewConsumer 创建一个rabbit mq的consumer，关联到spring cloud config server所在的名称为"springCloudBus"
+//的queue上，然后开启监听来自通道的配置变化请求。
 func NewConsumer(amqpURI, exchange, exchangeType, queue, key, ctag string) error {
 	c := &Consumer{
 		conn:    nil,
@@ -74,6 +77,9 @@ func NewConsumer(amqpURI, exchange, exchangeType, queue, key, ctag string) error
 	log.Printf("declared Queue (%d messages, %d consumers), binding to Exchange (key '%s')",
 		state.Messages, state.Consumers, key)
 
+	//这里看官方注释即可。利用和rabbit mq建立的channel，通过已经建立的某个exchange（通过exchange参数指定），
+	//连接到某个queue（通过queue参数指定）。这样如果发给exchange的某个publishing的bindingKey和指定的bindingKey一致，exchange
+	//即可将publishing路由到queue，然后通过channel，封装成Delivery传给本consumer
 	if err = c.channel.QueueBind(
 		queue,    // name of the queue
 		key,      // bindingKey
@@ -85,6 +91,7 @@ func NewConsumer(amqpURI, exchange, exchangeType, queue, key, ctag string) error
 	}
 
 	log.Printf("Queue bound to Exchange, starting Consume (consumer tag '%s')", c.tag)
+	//开始消费，接收来自管道的Delivery
 	deliveries, err := c.channel.Consume(
 		queue, // name
 		c.tag, // consumerTag,

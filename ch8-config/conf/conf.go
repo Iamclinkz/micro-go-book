@@ -44,6 +44,7 @@ func init() {
 }
 
 func initDefault() {
+	//通过viper管理配置信息
 	viper.SetDefault(kAppName, "client-demo")
 	viper.SetDefault(kConfigServer, "http://localhost:8888")
 	viper.SetDefault(kConfigLabel, "master")
@@ -54,6 +55,8 @@ func initDefault() {
 }
 func handleRefreshEvent(body []byte, consumerTag string) {
 	updateToken := &UpdateToken{}
+	//对来自rabbit mq的配置更新信息进行解码，如果解码正确，那么重新向spring config server拉取配置，
+	//如果解码不正确，简单的忽略
 	err := json.Unmarshal(body, updateToken)
 	if err != nil {
 		log.Printf("Problem parsing UpdateToken: %v", err.Error())
@@ -68,7 +71,12 @@ func handleRefreshEvent(body []byte, consumerTag string) {
 }
 
 func loadRemoteConfig() (err error) {
+	//把uri拼起来，然后通过get请求从配置中心中拿取对应的配置信息
 	confAddr := fmt.Sprintf("%v/%v/%v-%v.%v",
+		//这里是为了适配spring cloud config server的配置存储uri路径
+		//spring cloud config server提供了很多层级，来管理配置信息
+		//从前到后依次是：
+		//config server地址/app名称/版本（对应于git的分支）-环境.文件格式
 		viper.Get(kConfigServer), viper.Get(kConfigLabel),
 		viper.Get(kAppName), viper.Get(kConfigProfile),
 		viper.Get(kConfigType))
@@ -78,6 +86,7 @@ func loadRemoteConfig() (err error) {
 	}
 	defer resp.Body.Close()
 
+	//配置viper编解码方式。刚好可以通过文件名后缀区分
 	viper.SetConfigType(viper.GetString(kConfigType))
 	if err = viper.ReadConfig(resp.Body); err != nil {
 		return

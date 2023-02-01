@@ -19,6 +19,7 @@ func init() {
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("err:%s\n", err)
 	}
+	//读取配置文件，并且将配置文件的内容序列化到Resume中
 	if err := sub("ResumeInformation", &Resume); err != nil {
 		log.Fatal("Fail to parse config", err)
 	}
@@ -46,6 +47,8 @@ func main() {
 	fmt.Println(Contains("Basketball", Resume.Habits))
 }
 
+//Contains target为数组或者切片时，判断obj是否在其中
+//target为map时，判断obj是否作为key
 func Contains(obj interface{}, target interface{}) (bool, error) {
 	targetValue := reflect.ValueOf(target)
 	switch reflect.TypeOf(target).Kind() {
@@ -72,20 +75,26 @@ type ResumeInformation struct {
 }
 
 type ResumeSetting struct {
-	RegisterTime      string
-	Address           string
+	RegisterTime string
+	Address      string
+	//ResumeInformation 和ch8-config/config/resume_config.yaml中声明的 ResumeInformation 是统一的
 	ResumeInformation ResumeInformation
 }
 
+//parseYaml 从yaml中读取ResumeSetting，并且序列化到ResumeSetting结构中
 func parseYaml(v *viper.Viper) {
 	var resumeConfig ResumeSetting
+	//方式1：直接通过传入类型，viper通过反射，填充类型中的字段
 	if err := v.Unmarshal(&resumeConfig); err != nil {
 		fmt.Printf("err:%s", err)
 	}
 	fmt.Println("resume config:\n ", resumeConfig)
 }
+
+//sub 在这里是实例的意思，读取配置文件中key
 func sub(key string, value interface{}) error {
 	log.Printf("配置文件的前缀为：%v", key)
+	//方式2：通过传入名称，viper通过查询，直接拿到实例
 	sub := viper.Sub(key)
 	sub.AutomaticEnv()
 	sub.SetEnvPrefix(key)
