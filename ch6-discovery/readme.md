@@ -136,7 +136,7 @@ func MakeDiscoveryEndpoint(svc service.Service) endpoint.Endpoint {
 
 方便上层通过构造函数，创建endpoint。
 
-##### 3. transport层
+#### 3. transport层
 
 这层使用2.中提供的endpoint层中的endpoint，通过不同的协议，进行endpoint的输入输出的检查&编解码，然后交给endpoint使用。这层存在的意义是：
 
