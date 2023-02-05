@@ -24,8 +24,8 @@ func main() {
 	var (
 		servicePort = flag.Int("service.port", 10086, "service port")
 		serviceHost = flag.String("service.host", "127.0.0.1", "service host")
-		consulPort = flag.Int("consul.port", 8500, "consul port")
-		consulHost = flag.String("consul.host", "127.0.0.1", "consul host")
+		consulPort  = flag.Int("consul.port", 8500, "consul port")
+		consulHost  = flag.String("consul.host", "127.0.0.1", "consul host")
 		serviceName = flag.String("service.name", "use-string", "service name")
 	)
 
@@ -36,14 +36,17 @@ func main() {
 	var discoveryClient discover.DiscoveryClient
 	discoveryClient, err := discover.NewKitDiscoverClient(*consulHost, *consulPort)
 
-	if err != nil{
+	if err != nil {
 		config.Logger.Println("Get Consul Client failed")
 		os.Exit(-1)
 
 	}
 	var svc service.Service
-	svc = service.NewUseStringService(discoveryClient, &loadbalance.RandomLoadBalance{} )
+	//1.创建service
+	svc = service.NewUseStringService(discoveryClient, &loadbalance.RandomLoadBalance{})
+	//2.使用service，创建endpoint
 	useStringEndpoint := endpoint.MakeUseStringEndpoint(svc)
+	//3.使用go-kit hystrix中间件封装endpoint，中间件的逻辑可以见 ch7-rpc/go-kit/string-service/logging.go 中的注释
 	useStringEndpoint = circuitbreaker.Hystrix(service.StringServiceCommandName)(useStringEndpoint)
 
 	//创建健康检查的Endpoint
@@ -51,8 +54,8 @@ func main() {
 
 	//把算术运算Endpoint和健康检查Endpoint封装至StringEndpoints
 	endpts := endpoint.UseStringEndpoints{
-		UseStringEndpoint:      useStringEndpoint,
-		HealthCheckEndpoint: 	healthEndpoint,
+		UseStringEndpoint:   useStringEndpoint,
+		HealthCheckEndpoint: healthEndpoint,
 	}
 
 	//创建http.Handler
@@ -65,13 +68,13 @@ func main() {
 
 		config.Logger.Println("Http Server start at port:" + strconv.Itoa(*servicePort))
 		//启动前执行注册
-		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost,  *servicePort, nil, config.Logger){
+		if !discoveryClient.Register(*serviceName, instanceId, "/health", *serviceHost, *servicePort, nil, config.Logger) {
 			config.Logger.Printf("use-string-service for service %s failed.", serviceName)
 			// 注册失败，服务启动失败
 			os.Exit(-1)
 		}
 		handler := r
-		errChan <- http.ListenAndServe(":"  + strconv.Itoa(*servicePort), handler)
+		errChan <- http.ListenAndServe(":"+strconv.Itoa(*servicePort), handler)
 	}()
 
 	go func() {
@@ -79,7 +82,6 @@ func main() {
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errChan <- fmt.Errorf("%s", <-c)
 	}()
-
 
 	error := <-errChan
 	//服务退出取消注册

@@ -16,7 +16,6 @@ import (
 
 var (
 	ErrNoInstances = errors.New("query service instance error")
-
 )
 
 type HystrixHandler struct {
@@ -26,18 +25,18 @@ type HystrixHandler struct {
 	hystrixsMutex *sync.Mutex
 
 	discoveryClient discover.DiscoveryClient
-	loadbalance loadbalance.LoadBalance
-	logger       *log.Logger
+	loadbalance     loadbalance.LoadBalance
+	logger          *log.Logger
 }
 
 func NewHystrixHandler(discoveryClient discover.DiscoveryClient, loadbalance loadbalance.LoadBalance, logger *log.Logger) *HystrixHandler {
 
 	return &HystrixHandler{
 		discoveryClient: discoveryClient,
-		logger:        	logger,
-		hystrixs:      	make(map[string]bool),
-		loadbalance:	loadbalance,
-		hystrixsMutex: 	&sync.Mutex{},
+		logger:          logger,
+		hystrixs:        make(map[string]bool),
+		loadbalance:     loadbalance,
+		hystrixsMutex:   &sync.Mutex{},
 	}
 
 }
@@ -81,7 +80,7 @@ func (hystrixHandler *HystrixHandler) ServeHTTP(rw http.ResponseWriter, req *htt
 		// 使用负载均衡算法选取实例
 		selectInstance, err := hystrixHandler.loadbalance.SelectService(instanceList)
 
-		if err != nil{
+		if err != nil {
 			return ErrNoInstances
 		}
 
@@ -103,6 +102,7 @@ func (hystrixHandler *HystrixHandler) ServeHTTP(rw http.ResponseWriter, req *htt
 
 		// 返回代理异常，用于记录 hystrix.Do 执行失败
 		errorHandler := func(ew http.ResponseWriter, er *http.Request, err error) {
+			//可以学一下这种方式，调用者设置一个被调用者发生错误时的回调，并且声明一个变量，用于接收具体的错误信息
 			proxyError = err
 		}
 

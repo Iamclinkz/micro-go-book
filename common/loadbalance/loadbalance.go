@@ -6,8 +6,9 @@ import (
 	"math/rand"
 )
 
-// 负载均衡器
+//LoadBalance 负载均衡器
 type LoadBalance interface {
+	//SelectService 从若干服务实例中选择其中一个
 	SelectService(service []*api.AgentService) (*api.AgentService, error)
 }
 

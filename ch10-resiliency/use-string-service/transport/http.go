@@ -22,7 +22,6 @@ var (
 func MakeHttpHandler(ctx context.Context, endpoints endpoint.UseStringEndpoints, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 
-
 	options := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(encodeError),
@@ -45,7 +44,9 @@ func MakeHttpHandler(ctx context.Context, endpoints endpoint.UseStringEndpoints,
 		options...,
 	))
 
-	// 添加 hytrix 监控数据
+	// 添加 hystrix 监控数据
+	//开启之后，使用docker运行hystrix dashboard：
+	//docker run --name hystrix-dashboard -d -p 10087:8080 mlabouardy/hystrix-dashboard:latest
 	hystrixStreamHandler := hystrix.NewStreamHandler()
 	hystrixStreamHandler.Start()
 	r.Handle("/hystrix/stream", hystrixStreamHandler)

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-
+	//设置hystrix断路器配置。注意这里需要指定断路器的名称。
 	hystrix.ConfigureCommand("test_command", hystrix.CommandConfig{
 		// 设置参数
 		Timeout: hystrix.DefaultTimeout,
