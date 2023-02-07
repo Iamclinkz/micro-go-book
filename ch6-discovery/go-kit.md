@@ -183,3 +183,88 @@ func MakeHttpHandler(ctx context.Context, endpoints endpts.DiscoveryEndpoints, l
 }
 ```
 
+#### 4.service和endpoint的middleware
+
+service层和endpoint层都可以声明自己的middleware，用于面向切面编程。middleware通常是以函数的形式实现。
+
+每个Endpoint实际上是一个`func`，而每个Service实际上是一个`interface`，这两个的区别是，前者只能做handler，无法自己持有中间变量（只能可以通过上层传入func），相当于是无状态的。而后者由于是`interface`，所以一定是struct实现的，而struct内部是可以持有自己的变量的。
+
+* ServiceMiddleware
+
+  service层的`ServiceMiddleware`应该是对Service的封装，即传入一个提供服务功能的Service，传出一个加了中间件后，继续提供服务功能的Service（就好像传入一个士兵，士兵拥有“打仗”这个功能，在ServiceMiddleware中，给士兵加了“打仗前喊口号”这个行为，再传出。士兵仍然只是暴露“打仗”这个 功能）：
+
+  ```go
+  //自己生命的ServiceMiddleware的类型
+  type ServiceMiddleware func(Service) Service
+  ```
+
+  假设我们希望通过构造函数创建不同类型的Middleware，那么因为service是一个自定义的接口类型，所以作为参数传入的Service应该是struct类型。如果我们希望wrap一下struct，需要另外声明一个struct，用新的struct来保存作为参数的struct。所以这里的具体操作，应该是重新声明一个struct类型， 然后将传入的Service作为其成员变量，然后返回新的struct类型。举例来说，如果我们希望加一个日志中间件，应该如此定义：
+
+  ```go
+  //contains Service interface and logger instance
+  //利用了golang的存储接口的特性。由于loggingMiddleware内部持有了一个实现了string-service.Service接口的实例，所以其本身也实现了string-service.Service接口。这个特性适合做装饰器模式
+  type loggingMiddleware struct {
+  	Service
+  	logger log.Logger
+  }
+  
+  // LoggingMiddleware make logging middleware
+  func LoggingMiddleware(logger log.Logger) ServiceMiddleware {
+  	//注意这种声明中间件的方式，调用者调用LoggingMiddleware（logger），拿到的实际上是一个函数
+  	//这个函数原型为：
+  	//func(next Service)Service，即如果希望使用这个函数，需要再传入一个service，有点像洋葱，
+  	//传入洋葱内层，包裹本层皮，再返回
+  	return func(next Service) Service {
+  		return loggingMiddleware{next, logger}
+  	}
+  }
+  ```
+
+  这样，我们通过调用：
+
+  ```go
+  var svc service.Service
+  svc = service.StringService{}
+  
+  // add logging middleware
+  svc = service.LoggingMiddleware(logger)(svc)
+  ```
+
+  即可实现对service添加中间件。
+
+* EndpointMiddleware
+
+  endpoint层的`Middleware`应该是对Endpoint的封装。这部分是框架支持的：
+
+  ```go
+  //位于/Users/sunliyuan/sdk/go1.18/pkg/mod/github.com/go-kit/kit@v0.9.0/endpoint/endpoint.go
+  type Middleware func(endpoint.Endpoint) endpoint.Endpoint
+  ```
+
+  由于endpoint.Endpoint的类型为：
+
+  ```go
+  type Endpoint func(ctx context.Context, request interface{}) (response interface{}, err error)
+  ```
+
+  所以，中间件的构造函数的例子为：
+
+  ```go
+  func NewEndpointLogMiddlewareExample(logger log.Logger) endpoint.Middleware {
+    //通过调用下面一行return的函数，就可以拿到洋葱包裹器
+  	return func(next endpoint.Endpoint) endpoint.Endpoint {
+      //同serivceMiddleware，传入洋葱内层，包裹本层皮，再返回。这里返回的相当于是加了本层洋葱外壳的洋葱
+  		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+        //执行本层操作。实际上logger也是外层传入的。但是本层并没有持有任何的自己的内容
+  			if err = logger.Log("current handle:%v", ctx.Value("test")); err != nil {
+  				return nil, err
+  			}
+        
+        //本层处理完毕，让下一层继续处理。
+  			return next(ctx, request)
+  		}
+  	}
+  }
+  ```
+
+  
