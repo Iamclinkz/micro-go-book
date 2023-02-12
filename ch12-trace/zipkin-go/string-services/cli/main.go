@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package main
@@ -22,7 +23,7 @@ const (
 	hostPort = "0.0.0.0:0"
 
 	// Endpoint to send Zipkin spans to.
-	zipkinHTTPEndpoint = "http://114.67.98.210:9411/api/v1/spans"
+	zipkinHTTPEndpoint = "http://localhost:9411/api/v1/spans"
 
 	// Debug mode.
 	debug = false
@@ -39,6 +40,7 @@ const (
 
 //ci
 func main() {
+	//同样是collector->recorder->tracer
 	// Create our HTTP collector.
 	collector, err := zipkin.NewHTTPCollector(zipkinHTTPEndpoint)
 	if err != nil {
@@ -70,6 +72,7 @@ func main() {
 	span := opentracing.StartSpan("Run")
 
 	// Put root span in context so it will be used in our calls to the client.
+	//使用此api，将span放到ctx中，然后再传到http中，这样即可实现http中传输span的几个字段
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
 
 	// Call the Concat Method

@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package svc2
@@ -18,7 +19,7 @@ var (
 	ErrIntOverflow = errors.New("integer overflow occurred")
 )
 
-// Service interface to our svc2 service.
+// Service svc2暴露出来的服务。
 type Service interface {
 	Sum(ctx context.Context, a int64, b int64) (int64, error)
 }

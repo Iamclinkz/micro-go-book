@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package svc1
@@ -18,6 +19,7 @@ var (
 )
 
 // Service interface
+//svc1暴露出来的服务
 type Service interface {
 	Concat(ctx context.Context, a, b string) (string, error)
 	Sum(ctx context.Context, a, b int64) (int64, error)

@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package main
@@ -24,7 +25,7 @@ const (
 	hostPort = "127.0.0.1:61001"
 
 	// Endpoint to send Zipkin spans to.
-	zipkinHTTPEndpoint = "http://114.67.98.210:9411/api/v1/spans"
+	zipkinHTTPEndpoint = "http://localhost:9411/api/v1/spans"
 
 	// Debug mode.
 	debug = false
@@ -41,6 +42,7 @@ const (
 
 //svc1
 func main() {
+	//在服务中添加zipkin追踪，需要依次创建：collector->recorder->tracer
 	// create collector.
 	collector, err := zipkin.NewHTTPCollector(zipkinHTTPEndpoint)
 	if err != nil {
@@ -62,12 +64,14 @@ func main() {
 	}
 
 	// explicitly set our tracer to be the default tracer.
+	//设置创建的tracer为全局的tracer
 	opentracing.InitGlobalTracer(tracer)
 
 	// create the client to svc2
 	svc2Client := svc2.NewHTTPClient(tracer, svc2Endpoint)
 
 	// create the service implementation
+	//service1的实现，需要将svc2的客户端作为参数传入
 	service := svc1.NewService(svc2Client)
 
 	// create the HTTP Server Handler for the service

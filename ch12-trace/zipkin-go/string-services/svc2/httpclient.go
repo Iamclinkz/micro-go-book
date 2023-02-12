@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package svc2
@@ -72,6 +73,7 @@ func (c *client) Sum(ctx context.Context, a int64, b int64) (int64, error) {
 
 // NewHTTPClient returns a new client instance to our svc2 using the HTTP
 // transport.
+//svc1的main函数中调用，用于创建一个调用svc2服务的http客户端
 func NewHTTPClient(tracer opentracing.Tracer, baseURL string) Service {
 	return &client{
 		baseURL:      baseURL,

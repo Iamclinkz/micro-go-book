@@ -1,3 +1,4 @@
+//go:build go1.7
 // +build go1.7
 
 package svc2
@@ -24,15 +25,18 @@ func (s *svc2) Sum(ctx context.Context, a int64, b int64) (int64, error) {
 	time.Sleep(5 * time.Millisecond)
 
 	// Pull span from context.
+	//解析context中的span
 	span := opentracing.SpanFromContext(ctx)
 
 	// Example binary annotations.
+	//模拟，设置一些tag
 	span.SetTag("service", "svc2")
 	span.SetTag("string", "some value")
 	span.SetTag("int", 123)
 	span.SetTag("bool", true)
 
 	// Example annotation
+	//用于记录名为MyEventAnnotation的事件
 	span.LogEvent("MyEventAnnotation")
 
 	// Let's wait a little so it shows up nicely in our tracing graphics.
@@ -41,7 +45,7 @@ func (s *svc2) Sum(ctx context.Context, a int64, b int64) (int64, error) {
 	// Let's assume we want to trace a call we do to a database.
 	s.fakeDBCall(span)
 
-	// Check for Int overflow condition.
+	// 检查溢出情况
 	if (b > 0 && a > (Int64Max-b)) || (b < 0 && a < (Int64Min-b)) {
 		span.SetTag("error", ErrIntOverflow.Error())
 		return 0, ErrIntOverflow
@@ -58,6 +62,7 @@ func (s *svc2) fakeDBCall(span opentracing.Span) {
 	)
 	defer resourceSpan.Finish()
 	// mark span as resource type
+	//标识span的名称为resource
 	ext.SpanKind.Set(resourceSpan, "resource")
 	// name of the resource we try to reach
 	ext.PeerService.Set(resourceSpan, "PostgreSQL")
