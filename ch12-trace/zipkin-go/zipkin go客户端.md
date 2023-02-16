@@ -71,7 +71,7 @@ From:https://zipkin.io/pages/architecture.html
 
 >  注意需要和trace区分，一次trace（请求）可以包括若干span（调用）。
 
-注意，通过SpanID，TraceID，ParentID这三个字段的传递，可以描绘出某一次请求在整个系统中完整的传递，执行过程。而其他字段，例如Annotation的传递，可以在存储端进行聚类和整合，最终用于分析更多的数据。
+注意，通过SpanID，TraceID，ParentID这三个字段的传递，在zigkin server侧进行聚类和整合，可以描绘出某一次请求在整个系统中完整的传递，执行的拓扑图。而其他字段，例如Annotation的传递，可以用于携带某个span的更多数据，最终可以用于分析某个span的执行过程等。
 
 ### 2.2 go使用zipkin客户端
 
@@ -133,49 +133,49 @@ localhost:9411/zipkin
 
 2. 创建一个root span：
 
-```go
-// Create Root Span for duration of the interaction with svc1
-span := opentracing.StartSpan("Run")
-```
+    ```go
+    // Create Root Span for duration of the interaction with svc1
+    span := opentracing.StartSpan("Run")
+    ```
 
 3. 使用该root span，创建ctx：
 
-```go
-ctx := opentracing.ContextWithSpan(context.Background(), span)
-```
+    ```go
+    ctx := opentracing.ContextWithSpan(context.Background(), span)
+    ```
 
 4. 在发送http请求，请求另一个服务之前，将此ctx解析回span，并且提前设置span的结束时间为发送结束：
 
-```go
-span, ctx := opentracing.StartSpanFromContext(ctx, "Concat")
-defer span.Finish()
-```
+    ```go
+    span, ctx := opentracing.StartSpanFromContext(ctx, "Concat")
+    defer span.Finish()
+    ```
 
 5. 使用go库，创建一个http请求：
 
-```go
-req, err := http.NewRequest("GET", url, nil)
-if err != nil {
-  return "", err
-}
-```
+    ```go
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+      return "", err
+    }
+    ```
 
 6. 使用刚刚用tracer初始化的中间件，wrap一下request，生成一个新的request：
 
-```go
-req = c.traceRequest(req.WithContext(ctx))
-```
+    ```go
+    req = c.traceRequest(req.WithContext(ctx))
+    ```
 
 7. 将请求发送，并且如果返回的内容有问题，通过设置一个spanTag来表明本次调用失败：
 
-```go
-resp, err := c.httpClient.Do(req)
-if err != nil {
-  // annotate our span with the error condition
-  span.SetTag("error", err.Error())
-  return 0, err
-}
-```
+    ```go
+    resp, err := c.httpClient.Do(req)
+    if err != nil {
+      // annotate our span with the error condition
+      span.SetTag("error", err.Error())
+      return 0, err
+    }
+    ```
 
 ##### 2.2.2 服务器侧
 
@@ -194,10 +194,10 @@ if err != nil {
 
 2. 拿到http请求之后，从request中的ctx中解析出span，并且可以对span操作（例如加tag等）：
 
-```go
-span := opentracing.SpanFromContext(req.Context())
-//对span进行操作。。。
-```
+    ```go
+    span := opentracing.SpanFromContext(req.Context())
+    //对span进行操作。。。
+    ```
 
 3. 无需别的操作，将结果让handler帮忙返回即可。
 
@@ -231,6 +231,10 @@ resourceSpan.SetTag(
 ![image-20230213002538735](/Users/sunliyuan/Library/Application Support/typora-user-images/image-20230213002538735.png)
 
 注意，因为上层没有像http发送request请求一样，生成span，然后填入client send这个annotation，然后再发给下游微服务，下游微服务收到之后再从中取出span，填写server receive。即本微服务实际上没有下游微服务填写server receive和server send。所以本span的annotation只有client开始和client结束两个字段。
+
+##### 2.2.3 zipkin server侧
+
+每当某个span结束，zipkin客户端的（是recorder还是collector?)都会将该span的信息上报给zipkin server的collector，汇报的信息即zipkin的基本信息（包括traceID，spanID，span parent），以及用户附加信息（例如annotation，tag），当一个trace过程中的每个span，都发给服务器，并且服务器接收汇总之后，就可以绘制出整个的一个trace链路，以及这个链路中每个span的信息。
 
 ### 2.3 结果展示
 
